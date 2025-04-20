@@ -1,0 +1,456 @@
+<script type="text/javascript">
+        var gk_isXlsx = false;
+        var gk_xlsxFileLookup = {};
+        var gk_fileData = {};
+        function filledCell(cell) {
+          return cell !== '' && cell != null;
+        }
+        function loadFileData(filename) {
+        if (gk_isXlsx && gk_xlsxFileLookup[filename]) {
+            try {
+                var workbook = XLSX.read(gk_fileData[filename], { type: 'base64' });
+                var firstSheetName = workbook.SheetNames[0];
+                var worksheet = workbook.Sheets[firstSheetName];
+
+                // Convert sheet to JSON to filter blank rows
+                var jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1, blankrows: false, defval: '' });
+                // Filter out blank rows (rows where all cells are empty, null, or undefined)
+                var filteredData = jsonData.filter(row => row.some(filledCell));
+
+                // Heuristic to find the header row by ignoring rows with fewer filled cells than the next row
+                var headerRowIndex = filteredData.findIndex((row, index) =>
+                  row.filter(filledCell).length >= filteredData[index + 1]?.filter(filledCell).length
+                );
+                // Fallback
+                if (headerRowIndex === -1 || headerRowIndex > 25) {
+                  headerRowIndex = 0;
+                }
+
+                // Convert filtered JSON back to CSV
+                var csv = XLSX.utils.aoa_to_sheet(filteredData.slice(headerRowIndex)); // Create a new sheet from filtered array of arrays
+                csv = XLSX.utils.sheet_to_csv(csv, { header: 1 });
+                return csv;
+            } catch (e) {
+                console.error(e);
+                return "";
+            }
+        }
+        return gk_fileData[filename] || "";
+        }
+        </script><!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Prince - Code & Creativity</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+
+        body {
+            background: #0a0a23;
+            color: #fff;
+            overflow-x: hidden;
+        }
+
+        header {
+            position: fixed;
+            width: 100%;
+            padding: 1.5rem 2rem;
+            background: rgba(10, 10, 35, 0.8);
+            backdrop-filter: blur(10px);
+            z-index: 1000;
+        }
+
+        nav {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #00ff88;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        nav ul {
+            display: flex;
+            list-style: none;
+            gap: 2rem;
+        }
+
+        nav a {
+            color: #fff;
+            text-decoration: none;
+            font-weight: 500;
+            position: relative;
+            transition: color 0.3s;
+        }
+
+        nav a::after {
+            content: '';
+            position: absolute;
+            width: 0;
+            height: 2px;
+            background: #00ff88;
+            bottom: -5px;
+            left: 0;
+            transition: width 0.3s;
+        }
+
+        nav a:hover::after {
+            width: 100%;
+        }
+
+        nav a:hover {
+            color: #00ff88;
+        }
+
+        .section {
+            min-height: 100vh;
+            padding: 6rem 2rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        #home {
+            background: linear-gradient(135deg, #0a0a23, #1e1e5d);
+            text-align: center;
+        }
+
+        .hero h1 {
+            font-size: 4rem;
+            background: linear-gradient(45deg, #00ff88, #ff00ff);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 1rem;
+            animation: fadeIn 1s ease-out;
+        }
+
+        .hero p {
+            font-size: 1.3rem;
+            max-width: 700px;
+            margin: 0 auto;
+            color: #ccc;
+            animation: slideUp 1s ease-out 0.3s forwards;
+            opacity: 0;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid #00ff88;
+            border-radius: 15px;
+            padding: 2rem;
+            max-width: 800px;
+            backdrop-filter: blur(5px);
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 0 20px rgba(0, 255, 136, 0.3);
+        }
+
+        h2 {
+            font-size: 2.5rem;
+            color: #00ff88;
+            margin-bottom: 1.5rem;
+            position: relative;
+        }
+
+        h2::after {
+            content: '';
+            position: absolute;
+            width: 50px;
+            height: 3px;
+            background: #ff00ff;
+            bottom: -5px;
+            left: 0;
+        }
+
+        .skills-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 1rem;
+        }
+
+        .skill {
+            background: #1e1e5d;
+            padding: 0.5rem;
+            text-align: center;
+            border-radius: 10px;
+            font-size: 0.9rem;
+            transition: transform 0.3s;
+            cursor: pointer;
+        }
+
+        .skill:hover {
+            transform: scale(1.1);
+            background: #00ff88;
+            color: #0a0a23;
+        }
+
+        .timeline-item {
+            margin-bottom: 2rem;
+            padding-left: 2rem;
+            position: relative;
+        }
+
+        .timeline-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 10px;
+            height: 10px;
+            background: #ff00ff;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #ff00ff;
+        }
+
+        .certification-item {
+            margin-bottom: 1rem;
+            padding-left: 2rem;
+            position: relative;
+        }
+
+        .certification-item::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            width: 10px;
+            height: 10px;
+            background: #ff00ff;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #ff00ff;
+        }
+
+        .contact-links a {
+            color: #00ff88;
+            text-decoration: none;
+            margin: 0 1rem;
+            font-size: 1.2rem;
+            transition: color 0.3s;
+        }
+
+        .contact-links a:hover {
+            color: #ff00ff;
+        }
+
+        footer {
+            background: #0a0a23;
+            padding: 2rem;
+            text-align: center;
+            border-top: 1px solid #00ff88;
+        }
+
+        footer p {
+            color: #ccc;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.8); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        @keyframes slideUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        @media (max-width: 768px) {
+            .hero h1 {
+                font-size: 2.5rem;
+            }
+
+            .hero p {
+                font-size: 1rem;
+            }
+
+            nav ul {
+                gap: 1rem;
+            }
+
+            .card {
+                padding: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav>
+            <div class="logo">Prince</div>
+            <ul>
+                <li><a href="#home">Home</a></li>
+                <li><a href="#about">About</a></li>
+                <li><a href="#experience">Experience</a></li>
+                <li><a href="#education">Education</a></li>
+                <li><a href="#skills">Skills</a></li>
+                <li><a href="#certifications">Certifications</a></li>
+                <li><a href="#contact">Contact</a></li>
+            </ul>
+        </nav>
+    </header>
+
+    <section id="home" class="section">
+        <div class="hero">
+            <h1>Code Meets Creativity</h1>
+            <p>Hey, I'm Prince—a Software Engineer who weaves innovation and imagination into every line of code. Let's build something extraordinary together!</p>
+        </div>
+    </section>
+
+    <section id="about" class="section">
+        <div class="card">
+            <h2>My Story</h2>
+            <p>I’m a Software Engineer with a heart for creation and a mind for precision. From crafting sleek React interfaces to building robust Spring Boot backends, I thrive on turning ideas into reality. My toolkit—Java, Python, JavaScript, and more—fuels my passion for solving complex problems. In Agile and DevOps-driven worlds, I dance through challenges, collaborating with teams to deliver solutions that spark joy and drive impact.</p>
+            <p>Every project is a canvas, and I paint with code, curiosity, and a dream to make technology meaningful.</p>
+        </div>
+    </section>
+
+    <section id="experience" class="section">
+        <div class="card">
+            <h2>Journey So Far</h2>
+            <div class="timeline">
+                <div class="timeline-item">
+                    <h3>Software Engineering Intern, Edunet Foundation (AICTE)</h3>
+                    <p>Dec 2024 - Jan 2025</p>
+                    <ul>
+                        <li>Brought ideas to life with Java, Python, and JavaScript, tackling real-world challenges.</li>
+                        <li>Mastered new tools, leveling up my technical prowess.</li>
+                        <li>Teamed up to solve problems, creating solutions that clicked.</li>
+                        <li>Introduced a quality assurance process, boosting product reliability by 15%.</li>
+                        <li>Shined in group projects, blending creativity with collaboration.</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="education" class="section">
+        <div class="card">
+            <h2>Learning Path</h2>
+            <div class="timeline">
+                <div class="timeline-item">
+                    <h3>Bachelor of Technology in Computer Science</h3>
+                    <p>KCC Institute of Management and Technology, Greater Noida</p>
+                    <p>Jul 2022 - Jun 2026</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="skills" class="section">
+        <div class="card">
+            <h2>Superpowers</h2>
+            <div class="skills-grid">
+                <div class="skill">Java</div>
+                <div class="skill">Python</div>
+                <div class="skill">JavaScript</div>
+                <div class="skill">Node.js</div>
+                <div class="skill">React</div>
+                <div class="skill">Spring Boot</div>
+                <div class="skill">MySQL</div>
+                <div class="skill">SQL</div>
+                <div class="skill">HTML & CSS</div>
+                <div class="skill">DBMS</div>
+                <div class="skill">Operating Systems</div>
+                <div class="skill">Computer Networks</div>
+                <div class="skill">OOPS</div>
+                <div class="skill">Agile Methodologies</div>
+                <div class="skill">DevOps</div>
+                <div class="skill">Analytical Thinking</div>
+                <div class="skill">Problem Solving</div>
+                <div class="skill">Communication</div>
+            </div>
+        </div>
+    </section>
+
+    <section id="certifications" class="section">
+        <div class="card">
+            <h2>Certifications</h2>
+            <div class="certification-item">
+                <p> GEOPROCESSING BY PYTHON  : [ISRO ], [2022]</p>
+                <p>[TCS CERTIFICATION        : (AI,COMMUNICATION ,ML SUCH MORE SKILLS), [TCS (TATA Consultancy )]</p>
+                <p>HYPERLOOP EFFECT          :  [IIT MADRAS ]</p>
+                <p>PYTHON CERTIFICATION      : [IBM COURSERA ]</p>
+                <p>INTERNSHIP CERTIFICATION  : [EDUNET FOUNDATION AICTE]</p>
+                <p>SOLUTION ARCHITECTURE     : [AWS AMAZON, FORAGE ]</p>
+                <p>WALMART GOBAL TECH CERTIFICATION
+            </div>
+        </div>
+    </section>
+
+    <section id="contact" class="section">
+        <div class="card">
+            <h2>Let's Connect</h2>
+            <p>Email: princemourya581@gmail.com</p>
+            <p>Phone: (+91) 7017460028</p>
+            <p>Location: Greater Noida, India</p>
+            <div class="contact-links">
+                <a href="https://www.linkedin.com/in/princemourya" target="_blank">LinkedIn</a>
+                <a href="https://github.com/princemourya" target="_blank">GitHub</a>
+            </div>
+        </div>
+    </section>
+
+    <footer>
+        <p>© 2025 Prince. Crafted with Code & Passion.</p>
+    </footer>
+
+    <script>
+        // Smooth scrolling
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                document.querySelector(this.getAttribute('href')).scrollIntoView({
+                    behavior: 'smooth'
+                });
+            });
+        });
+
+        // Card animations on scroll
+        const cards = document.querySelectorAll('.card');
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = 1;
+                    entry.target.style.transform = 'translateY(0)';
+                }
+            });
+        }, { threshold: 0.1 });
+
+        cards.forEach(card => {
+            card.style.opacity = 0;
+            card.style.transform = 'translateY(30px)';
+            card.style.transition = 'opacity 0.5s, transform 0.5s';
+            observer.observe(card);
+        });
+
+        // Skill hover effect
+        const skills = document.querySelectorAll('.skill');
+        skills.forEach(skill => {
+            skill.addEventListener('mouseover', () => {
+                skill.style.boxShadow = '0 0 15px rgba(0, 255, 136, 0.5)';
+            });
+            skill.addEventListener('mouseout', () => {
+               资助
+
+                skill.style.boxShadow = 'none';
+            });
+        });
+    </script>
+</body>
+</html>
